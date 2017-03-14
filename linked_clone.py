@@ -5,7 +5,7 @@ from pyVim.connect import SmartConnect, Disconnect
 import atexit
 import time
 import threading
-
+import ssl
 
 def validate_options():
     parser = argparse.ArgumentParser(description='Input parameters')
@@ -23,6 +23,8 @@ def validate_options():
                         help='Destination datastore for cloned VM')
     parser.add_argument('--num_vms', dest='numvm', type=int, required=True,
                         help='Number of VMs to be created')
+    parser.add_argument('-ssl', dest='ssl', required=True, default='false',
+			help='SSL required')
     args = parser.parse_args()
     return args
 
@@ -80,7 +82,12 @@ def task_status(task, operation):
 
 def main():
     opts = validate_options()
-    si = SmartConnect(host=opts.vchost, user=opts.vcuser, pwd=opts.vcpasswd)
+    if str(opts.ssl).lower() == "true":
+	si = SmartConnect(host=opts.vchost, user=opts.vcuser, pwd=opts.vcpasswd)
+    else:
+    	s = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    	s.verify_mode = ssl.CERT_NONE
+    	si = SmartConnect(host=opts.vchost, user=opts.vcuser, pwd=opts.vcpasswd, sslContext=s)
     atexit.register(Disconnect, si)
     content = si.RetrieveContent()
     hostid = getHostId(content, opts.dhost)
@@ -145,7 +152,7 @@ def main():
     task_status(task, 'snapshot')
 
     print 'Lets start cloning'
-    clone_spec = vim.vm.CloneSpec(location=cspec, powerOn=False, template=False, snapshot=child.snapshot.currentSnapshot,
+    clone_spec = vim.vm.CloneSpec(location=cspec, powerOn=True, template=False, snapshot=child.snapshot.currentSnapshot,
                                   memory=False)
     count = 0
     for vms in range(0, opts.numvm):
