@@ -56,7 +56,7 @@ def getdc(objec):
 
 
 def linkedvm(child, vmfolder, i, clone_spec):
-    vmname = 'clone_%s_vm' % i
+    vmname = 'sr_multinicvm_%s' % i
     task = child.CloneVM_Task(vmfolder, vmname, clone_spec)
     task_status(task, "clone")
 
@@ -106,7 +106,7 @@ def main():
         print 'Could not locate any VM in inventory , exiting'
         exit()
     for vm in children:
-        if vm.config.name == opts.vmname.strip():
+	if vm.name == opts.vmname.strip():
             child = vm
             break
     if child is None:
